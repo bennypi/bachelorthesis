@@ -1,0 +1,66 @@
+\chapter{Grundlagen}
+\label{chap:grundlagen}
+
+Wie bereits in der Einleitung erwähnt sind Kameras ein wichtiger Sensor in der Robotik, undem sie dem Roboter helfen, die Umgebung wahrzunehmen. Abhängig von dem Einsatzgebiet ist ein genaues Abbild der Umgebung außerordentlich wichtig für die Erfüllung der Aufgabe. Dies ist der Fall wenn zum Beispiel der Roboter über das Kamerabild einen Gegenstand lokalisieren muss, um ihn anschließend zu greifen, oder er muss in dem Kamerabild Hindernisse erkennen, um einen Weg zum Ziel zu planen.
+
+Der relativ günstige Preis von Lochkameras gegenüber anderen bildgebenden Sensoren hat dazu beigetragen, dass Kameras ein viel genutzter Sensor sind. Da sich aber gezeigt hat, dass die Toleranzen bei der Produktion und der Aufbau der Kameras an sich zu Verzerrungen im Bild führen, wurden Modelle entwickelt, um diese Verzerrungen herauszurechnen und das Bild zu korrigieren. Ein häufig genutztes Modell wird im folgenden beschrieben.
+
+\section{Kameramodell} % (fold)
+\label{sec:kameramodell}
+In \cite{Zhang} wird ein gängiges Kameramodell beschrieben, welches nun kurz erklärt wird.
+
+Die Beziehung zwischen einem Punkt in einem zweidimensionalen Bild und einem Punkt in der dreidimensionalen Welt wird durch \autoref{projection} beschrieben:
+
+\begin{equation}
+\begin{bmatrix}
+ 	u \\
+ 	v \\
+ 	1
+\end{bmatrix} = K 
+\begin{bmatrix}
+   	R & T
+\end{bmatrix} 
+\begin{bmatrix}
+   	x \\
+   	y \\
+   	z \\
+   	1
+\end{bmatrix} \label{projection}
+\end{equation}
+
+mit 
+
+\begin{equation}
+  K = 
+  \begin{bmatrix}
+  	f_x & 0 & c_x \\
+  	0 & f_y & c_y \\
+  	0 & 0 & 0
+  \end{bmatrix}
+\end{equation}
+
+$K$ enthält die intrinsischen Parameter der Kamera, die auf Grund der Fertigungstoleranzen für jede Kamera unterschiedlich sind. $f$ definiert die Brennweite der Kamera. Da die Pixel nicht immer quadratisch sind, wird dieser Wert für die x und y-Achse angegeben. $c_x$ und $c_y$ beschreiben das optische Zentrum des Bildes, welches ebenfalls nicht immer genau im Mittelpunktes des Bildes liegt.
+
+$R$ und $T$ definieren die extrinischen Parameter. $R$ ist eine Rotationsmatrix, die die Rotation zwischen dem Kamera- und Weltkoordinatensystem beschreibt, $T$ ist ein Vektor der die Transformation zwischen Kamera- und Weltkoordinatensystem beschreibt.
+
+\section{Verzeichnung} % (fold)
+\label{sec:verzeichnung}
+Mit dem Kameramodell kann nun eine Beziehung zwischen einem Punkt im Bild und dem Punkt in der Welt hergestellt werden. Kameras bilden das Bild jedoch nicht immer korrekt ab. Häufig sieht man in Bildern den Effekt, dass gerade Linien in der Welt, wie z.B. Häuserkanten nicht gerade im Bild aufgenommen werden, sondern das diese im Bild gebogen werden. Diesen Effekt nennt man Verzeichnung.
+
+Man kann zwischen zwei verschiedenen Arten der Verzeichnung sprechen. Die Verzeichnung, die gerade Linien gekrümmt darstellt, heißt radiale Verzeichnung. Um diese Verzeichnung herauszurechnen werden die drei Faktoren $k_1, k_2, k_3$ benötigt. Sind diese gegeben, lässt sich die Verzeichnung korrigieren. $r$ ist der Abstand vom Bildmittelpunkt zum Punkt, der korrigiert werden soll. $x', y'$ sind die falsch abgebildeten Punkte, $x,y$ sind die korrigierten Punkte.
+
+\begin{equation}
+	x = x'(1 + k_1 r^2 + k_2 r^4 + k_3 r^6)
+\end{equation}
+\begin{equation}
+	y = y'(1 + k_1 r^2 + k_2 r^4 + k_3 r^6)
+\end{equation}
+
+Zusätzlich zu der radialen Verzeichnung gibt es tangentiale Verzeichnung. Diese tritt auf, wenn die Kameralinse nicht parallel zum Sensor eingebaut ist. Diese Verzeichnung führt dazu, dass Linien, die im idealen Bild parallel verlaufen, nun einen gemeinsamen Fluchtpunkt besitzen. Um diese Verzeichnung zu korrigieren, werden die Faktoren $p_1, p_2$ benötigt.
+
+\begin{equation}
+	x = x' + (2 p_1 xy + p_2 (r^2 + 2 x^2))
+\end{equation}
+\begin{equation}
+	y = y' + (p_1(r^2 + 2 y^2) + 2p_2 xy)
+\end{equation}
