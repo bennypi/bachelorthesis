@@ -1,3 +1,4 @@
+%!TEX root = ../bachelorthesis.tex
 \chapter{Grundlagen}
 \label{chap:grundlagen}
 
@@ -44,6 +45,7 @@ $K$ enthält die intrinsischen Parameter der Kamera, die auf Grund der Fertigung
 $R$ und $T$ definieren die extrinsischen Parameter. $R$ ist eine Rotationsmatrix, die die Rotation zwischen dem Kamera- und Weltkoordinatensystem beschreibt, $T$ ist ein Vektor, der die Transformation zwischen Kamera- und Weltkoordinatensystem beschreibt.
 
 \section{Verzeichnung} % (fold)
+%!TEX root = ../bachelorthesis.tex
 \label{sec:verzeichnung}
 Mit dem Kameramodell kann nun eine Beziehung zwischen einem Punkt im Bild und dem Punkt in der Welt hergestellt werden. Kameras bilden das Bild jedoch nicht immer korrekt ab. Häufig sieht man in Bildern den Effekt, dass gerade Linien in der Welt, wie z.B. Häuserkanten, nicht gerade im Bild aufgenommen werden, sondern das diese gebogen werden. Diesen Effekt nennt man Verzeichnung.
 
@@ -116,3 +118,16 @@ Anschließend werden in jedem aufgenommenen Bild die Kalibrierungspunkte aus dem
 Es gibt mehrere Frameworks, die man zum Kalibrieren benutzen kann. OpenCV ist eine freie Bibliothek zur Bildverarbeitung und maschinellen Sehen. Es wird kein fertiges Programm angeboten, mit dem der Vorgang direkt gestartet werden kann. Stattdessen existieren Bibliotheken in C++ und Python, in denen der Benutzer Funktionen findet, mit denen er sein eigenes Programm schreiben kann, um eine Kamera zu kalibrieren. Für Benutzer, die sich mit der Materie nicht so gut auskennen, ist dies eine hohe Hürde, Profis können damit aber das Programm auf die eigenen Bedürfnisse anpassen.
 
 Ein anderes Framework ist HALCON. HALCON wird kommerziell vermarktet und ist nicht frei verfügbar. Es werden wie bei OpenCV Bibliotheken für verschiedene Programmiersprachen angeboten, mit denen Benutzer ihre eigenen Programme schreiben können. Zusätzlich existiert mit HDevelop eine integrierte Entwicklungsumgebung. In HDevelop wird eine eigene Programmiersprache benutzt, die weniger tief und detailliert als anderen Sprachen ist, aber dafür für unerfahrene Benutzer deutlich sprechender und intuitiver zu benutzen ist. Außerdem ist ein Kalibrierungsassistent enthalten, der die aufgenommen Bilder vor der Berechnung der Parameter anhand ihrer Bildschärfe, Belichtung und weiterer Eigenschaften bewertet.
+
+\subsection{Weitere benutzte Frameworks} % (fold)
+\label{sub:weitere_benutzte_frameworks}
+\subsubsection{ROS} % (fold)
+\label{ssub:ros}
+ROS \cite{ROS} steht für Robot Operating System. Es ist dazu gedacht, ein Framework für die Programmierung von unterschiedlichen Robotern zur Verfügung zu stellen. Man kann fertige Pakete einbinden, die von anderen Benutzern bereitgestellt werden, zum Beispiel MoveIt!, siehe\autoref{ssub:moveit}.
+
+In der Regel startet man mehrere Programme, die jeweils eine bestimmte Aufgabe erfüllen sollen. Es gibt unterschiedliche Möglichkeiten mit denen die Programme untereinander kommunizieren können. ROS stellt Bibliotheken für viele verschiedene Programmiersprachen bereit, damit man eigene Pakete schreiben kann, die sich in das Gesamtsystem integrieren lassen.
+
+
+\subsubsection{MoveIt!} % (fold)
+\label{ssub:moveit}
+MoveIt! \cite{MoveIt} ist ein Framework, dass die Steuerung eines Roboters abstrahiert. MoveIt! stellt Bibliotheken für verschiedene Programmiersprachen bereit, mit denen man die Bewegung des Roboters kontrollieren kann. Möchte man wie in diesem Projekt einen Roboterarm steuern, kann man eine Zielposition und Orientierung für die Spitze des Arms angeben. MoveIt! berechnet für diese Pose dann die Konfiguration der Robotergelenke. Im nächsten Schritt wird dann eine Abfolge von Zwischenkonfigurationen gesucht, damit sich der Roboter von seiner Startkonfiguration zur Zielkonfiguration bewegt, ohne dass er sich selbst oder andere Objekte in seiner Umgebung berührt. Existiert eine solche Abfolge von Konfigurationen, wird diese ausgeführt sodass sich der Roboterarm letztendlich an der gewünschten Position mit der gewünschten Orientierung befindet.
