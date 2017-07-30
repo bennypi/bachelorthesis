@@ -1,0 +1,67 @@
+%!TEX root = ../bachelorthesis.tex
+\chapter{Implementierung}
+\label{chap:implementierung}
+Nachdem der grundsätzliche Aufbau und Ablauf der Kommunikation des Gesamtprogramms beschrieben wurde, werden nun die Details der einzelnen Module aufgeführt.
+
+\section{universal\_robot} % (fold)
+\label{sec:universal_robot_impl}
+An diesem Programm wurden einige Anpassungen vorgenommen. Zum einen wurde die in MoveIt! benutzte Bibliothek zur Lösung der inversen Kinematik KDL durch TRAC\_IK ausgetauscht. Diese Bibliothek wird dazu benutzt, für eine gewünschte Position und Orientierung des Roboterarms die erforderlichen Winkel der Gelenke zu berechnen. Während der Versuche kam es vor, dass MoveIt! keinen oder nur einen viel zu komplizierten Weg von der Start- zur Zielkonfiguration gefunden hat. Dieses Problem konnte teilweise durch den benannten Austausch behoben werden.
+
+Zusätzlich wurde das URDF in diesem Paket angepasst. Das URDF enthält die geometrischen Informationen über den Roboterarm, wie z.B. die Länge und Form der einzelnen Glieder und die Position Werkzeugaufnahme des Arms. Wird dem Arm eine Zielposition und Orientierung übergeben, so gilt diese normalerweise für die Werkzeugaufnahme des Arms. Für diese Bachelorarbeit wurde jedoch das Kalibrierungsmuster an dieser Stelle montiert. Das Muster wurde nicht mittig an der Werkzeugaufnahme angebracht sondern steht seitlich ab. Daher wurde im URDF der Endpunkt des Arms von der Werkzeugaufnahme auf den Mittelpunkt des Kalibrierungsmusters versetzt. Das führt dazu, dass sich nun nicht mehr der physische Endpunkt des Arms an der Zielposition befindet, sondern der Mittelpunkt des Kalibrierungsmusters.
+
+\section{MoveArmServer} % (fold)
+\label{sec:movearmserver_impl}
+Diese Node wurde in der Programmiersprache Python entwickelt. Sie hat den Auftrag, die Bewegung des Arms zu koordinieren und dazu mit MoveIt! zu kommunizieren.
+
+Das Programm erhält beim Start die Position der Kamera in Relation zur Basis des Arms. Beim Start wird außerdem ein Actionserver gestartet, der auf Aufgaben vom Typ \texttt{MoveArm} wartet. Zusätzlich wird der Kommunikationskanal zu MoveIt! gestartet.
+
+Die Aufgabe \texttt{MoveArm} ermöglicht es einem Actionclient, den Roboterarm zu einer von ihm gewählten Position zu bewegen. Zusätzlich kann er die horizontale und vertikale Neigung des Musters bestimmen.
+
+Erhält das Programm eine Aufgabe, so wird zunächst für die gewünschte Position die Orientierung des Arms berechnet. Dazu wird zunächst angenommen, dass das Kalibrierungsmuster orthogonal zur Kamera stehen soll. Jede Position lässt sich mit den drei Variablen $x, y, z$ definieren. Dadurch lässt sich jede Position auch als Ortsvektor darstellen:
+\begin{equation}
+	\vec{p} = 
+	\begin{pmatrix}
+		x\\
+		y\\
+		z
+	\end{pmatrix}
+\end{equation}
+
+Um nun die Orientierung zu errechnen, subtrahiert man zunächst den Vektor für Position der Kamera vom Vektor für die Position des Roboterarms. Der daraus resultierende Vektor $\vec{p}_{diff}$ beschreibt die geometrische Transformation vom Arm zur Kamera. Mit diesem Vektor lässt sich nun der Gierwinkel $\alpha$ und Neigungswinkel $\beta$ bestimmen, damit das Muster orthogonal zur Kamera steht:
+\begin{equation}
+	\alpha = \arctantwo(y_{diff}, x_{diff})
+\end{equation}
+\begin{equation}
+	\beta = -\arcsin(x_{diff})
+\end{equation}
+
+Mit diesen Winkeln würde nun das Muster orthogonal zur Kamera zeigen. Wurden in der Aufgabe zusätzliche Neigungen angegeben, werden diese nun zu diesen Winkeln addiert.
+
+Schließlich muss noch der Rollwinkel $\gamma$ bestimmt werden. In diesem Anwendungsfall soll das Kalibrierungsmuster immer nach außen zeigen und parallel zum Boden stehen, damit die Reichweite des Roboters erhöht wird.
+
+\todo{Algorithmus zur Berechnung des Rollwinkels beschreiben}
+
+Wurde die Orientierung berechnet, muss für die Position und Orientierung ein Plan generiert werden, mit dem sich der Arm aus der Startposition zur Zielposition bewegt, ohne dass er mit sich selbst oder der Umgebung kollidiert. Diese Aufgabe übernimmt MoveIt!. Aufgrund des eingesetzten Algorithmus in MoveIt! können für gleiche Start- und Zielpositionen unterschiedliche Pläne erstellt werden, teilweise kann MoveIt! auch keinen Plan finden. Daher werden für jede Aufgabe, die der Actionserver erhält, fünf Pläne von MoveIt! erzeugt. Wenn die gewünschte Position nicht erreichbar ist oder Teile des Roboters oder das Kalibrierungsmuster mit sich selber oder der Umgebung kollidieren würden, sind alle fünf Pläne leer. In diesem Fall wird die Aufgabe abgebrochen und dem Actionclient eine negative Rückmeldung zurückgegeben. Ansonsten wird der Plan ausgewählt, der die geringste Anzahl an Zwischenpositionen enthält, und an MoveIt! zur Ausführung übermittelt. Hat MoveIt! die erfolgreiche Ausführung bestätigt so wird auch dem Actionclient die Aufgabe positiv bestätigt.
+
+\section{caltab\_detector\_node} % (fold)
+\label{sec:caltab_detector_node_impl}
+Diese Node wurde in der Programmiersprache C++ programmiert. Sie dient dazu, die von der Kamera übermittelten Bilder auszuwerten und zur Kalibrierung vorzuhalten.
+
+Über das Topic \texttt{/camera/image\_raw} erhält das Programm die Bilder der Webcam. Zusätzlich stellt das Programm zwei Actionserver zur Verfügung. Der Actionserver mit dem Namen \texttt{FindCaltab} hat die Aufgabe, in dem aktuellen Bild der Webcam nach dem Kalibrierungsmuster zu suchen. Der Actionclient kann für jeden Auftrag angeben, in wie vielen aufeinanderfolgenden Bildern der Server nach dem Muster suchen soll, da dieses nicht immer im ersten Versuch gefunden wird. Hat der Server das Muster innerhalb der erlaubten Anzahl von Bildern gefunden erhält der Client eine positive Rückmeldung, ansonsten eine negative.
+
+Der zweite Actionserver \texttt{Calibrate} führt die Kalibrierung durch und errechnet aus allen Bildern, in denen das Muster zu sehen war, die intrinsischen Parameter, die Verzeichnungsparameter und den mittleren Fehler. Zusätzlich werden diese Bilder auf der Festplatte abgespeichert. Für jedes Bild wird außerdem eine Kopie angefertigt, in welches eine Simulation des Musters über das im Bild zu sehende Muster gelegt wird. Dadurch kann zusätzlich visuell die Qualität der Kalibrierung überprüft werden.
+
+Beim Start der Node kann der Benutzer ein Verzeichnis angeben, in dem die Bilder gespeichert werden sollen. Andernfalls wird in dem aktuellen Verzeichnis ein Unterordner erstellt. Außerdem wird die Datei gelesen, in der die initialen intrinsischen Parameter für die eingesetzte Kamera hinterlegt sind. Ebenfalls wird die Datei gelesen, in der die Dimensionen und Eigenschaften des benutzten Kalibrierungsmusters definiert sind. \todo{Das muss ebenfalls vom Benutzer konfiguriert werden können. Außerdem muss die Erstellung der Datei benutzerfreundlich möglich sein.} Anschließend verbindet sich das Programm mit dem Topic der Kamera, um die Bilder zu empfangen.
+
+Jedes Mal, wenn das Programm ein aktuelles Bild von der Kamera erhält, wird die Methode \texttt{subscriberCallback} aufgerufen. Die Methode überprüft zunächst, ob auf Grund eines laufenden Auftrags für den FindCaltab Actionserver noch Bilder überprüft werden sollen. Ist dies nicht der Fall, wird die Methode direkt beendet und das Programm wartet weiter auf eingehende Aufträge oder neue Bilder. 
+
+Wenn jedoch ein Auftrag aktiv ist und das aktuelle Bild ausgewertet werden soll, wird die Methode weiter abgearbeitet. Das Bild, das über das Topic empfangen wurde, ist vom Typ \texttt{sensor\_msgs::Image}. Um es aber mit HALCON benutzen zu können muss zu dem Typ \texttt{HObject} umgewandelt werden. Dazu wird das Bild in einem Zwischenschritt mit Hilfe der Methode \texttt{toCvCopy} aus dem Paket \texttt{cv\_bridge} in ein Objekt vom Typ \texttt{cv::Mat} konvertiert. Dadurch kann man nun relativ einfach auf den Wert für jedes einzelne Pixel zugreifen. Anschließend wird Pixel für Pixel über das gesamte Bild iteriert und die Werte der Pixel werden in einem \texttt{unsigned char*} gespeichert. Die HALCON-Methode \texttt{GenImage1} liest dann die Werte aus dem \texttt{unsigned char*} und erstellt das \texttt{HObject}.
+
+Für jedes auszuwertende Bild wird ein fortlaufender Index erstellt. Es wird nun die HALCON-Methode \texttt{FindCalibObject} aufgerufen. Diese sucht in dem eben erstellen Bild nach dem Kalibrierungsmuster. Wird das Muster nicht erkannt, wirft diese Methode eine Exception. Diese wird im weiteren Verlauf der \texttt{subscriberCallback}-Methode gefangen und in der Konsole wird die Fehlermeldung von HALCON ausgegeben. Kann HALCON das Muster erkennen, wird es intern unter dem Index abgespeichert und zusätzlich in dem vom Benutzer angegeben Ordner gespeichert. In einer von diesem Programm verwalteten Liste wird zusätzlich der Index dieses Bildes abgespeichert. Der boolesche Wert caltabFound wird auf wahr gesetzt und die Anzahl der noch auszuwertenden Bilder für den aktuellen Auftrag auf null. 
+
+Erhält der FindCaltab Actionserver einen neuen Auftrag, wird die Methode \texttt{findCaltabAction} aufgerufen. Zunächst wird der booleschen Wert auf falsch und die Anzahl der auszuwertenden Bilder auf den Wert gesetzt, der im Auftrag vom Client angegeben wurde. Dann wartet die Methode so lange, bis entweder die angegebene Anzahl an Bildern ausgewertet wurde oder vorher ein Kalibrierungsmuster gefunden wurde. Ist der boolesche Wert caltabFound wahr, wird dem Client eine positive Rückmeldung gegeben, sonst eine negative.
+
+Wenn der Calibrate Actionserver einen Auftrag erhält, wird die Kalibrierung durchgeführt. Dazu wird zunächst die HALCON-Methode \texttt{CalibrateCameras} aufgerufen. Diese berechnet intern die neuen intrinsischen Parameter und die Parameter für die Verzeichnung. Außerdem wird der mittlere Fehler zurückgegeben. Um nun die neuen Parameter zu erhalten, wird die HALCON-Methode \texttt{GetCalibData} aufgerufen. Die so erhaltenen Werte werden zunächst in Werte vom Typ \texttt{double} umgewandelt. Dann werden dem Client diese Werte, der Fehler und die Anzahl der zur Kalibrierung benutzten Bilder zurückgegeben.
+
+Anschließend wird nacheinander jedes abgespeicherte Bild mit Hilfe der Liste, die alle Indexe enthält, noch einmal mit HALCON eingelesen. Zunächst wird für das Bild die Position und Orientierung des Kalibrierungsmuster von HALCON ausgelesen, wie es von HALCON von erkannt wurde. Dann werden diese Informationen mit denen neuen Kameraparametern korrigiert. Schließlich wird das so korrigierte Kalibrierungsmuster über das eingelesene Bild gelegt und das Bild so auf dem Dateisystem abgespeichert.
+\todo{Beispiel Screenshot einfügen, erklären.}
