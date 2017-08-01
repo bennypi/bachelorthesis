@@ -6,6 +6,8 @@ Für dieses Projekt wurden mehrere Softwareprogramme integriert, teilweise wurde
 \label{sec:gesamtübersicht}
 In \autoref{img:overview} ist die Architektur graphisch dargestellt. Jedes Element stellt dabei eine ROS-Node dar, also ein einzelnes Programm. Elemente, die blau eingefärbt sind, stehen für Programme, die von anderen Benutzern programmiert wurden und gegebenenfalls zu diesem Einsatzzweck angepasst wurden. Programme, die im Rahmen dieser Bachelorarbeit programmiert wurden, sind grün eingefärbt.
 
+\todo{Andere Namen für die Nodes}
+
 \begin{figure}[!hbt]
 	\centering
 	\vspace{1ex}
@@ -20,7 +22,7 @@ Das Element universal\_robot stellt eine abstrahierte Schnittstelle zur Steuerun
 
 Die beiden Elemente MoveArmServer und caltab\_detector\_node wurden im Rahmen dieser Bachelorarbeit entwickelt. MoveArmServer bietet Funktionen zur Steuerung des Arms, die speziell in diesem Projekt benötigt werden. caltab\_detector\_node verarbeitet die Bildinformationen.
 
-Das gelbe CalibrationController wurde ebenfalls im Rahmen dieser Bachelorarbeit entwickelt. Dieses Programm steuert den gesamten Ablauf, kommuniziert mit den beiden gelben Elementen und sorgt dafür, dass der Roboter sich an die gewünschten Positionen bewegt und die Bilder im richtigen Moment aufgenommen werden. Zum Schluss werden dem Benutzer dann die ermittelten Parameter zurückgegeben.
+Der CalibrationController wurde ebenfalls im Rahmen dieser Bachelorarbeit entwickelt. Dieses Programm steuert den gesamten Ablauf, kommuniziert dazu mit den beiden selbstgeschrieben Nodes und sorgt dafür, dass der Roboter sich an die gewünschten Positionen bewegt und die Bilder im richtigen Moment aufgenommen werden. Zum Schluss werden dem Benutzer dann die ermittelten Parameter zurückgegeben.
 
 Durch diese Architektur und den Einsatz von ROS hat man den Vorteil, dass man weder an den UR5 Roboterarm noch an die Webcam mit libuvc gebunden ist, um eine Kamera mit Hilfe eines Roboters zu kalibrieren. Die caltab\_detector\_node benötigt lediglich ein Topic, auf dem die Bilder der eingesetzten Kamera veröffentlicht werden. Dies kann man wie in diesem Fall mit libuvc\_camera machen, aber abhängig von der eingesetzten Kamera kann man auch andere Programme benutzen, die diese Funktionalität zur Verfügung stellen. Man kann ebenso den Roboterarm austauschen. Wichtig ist nur, dass es für den Roboter eine MoveIt!-Integration gibt und sich an dessen Ende ein Kalibrierungsmuster befestigen lässt. 
 
