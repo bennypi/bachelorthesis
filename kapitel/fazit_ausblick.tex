@@ -1,0 +1,18 @@
+%!TEX root = ../bachelorthesis.tex
+\chapter{Fazit und Ausblick}
+\label{chap:fazit_und_ausblick}
+In dieser Arbeit konnte gezeigt werden, dass man den zeitaufwändigen Kalibrierungsvorgang für Kameras mit einem Roboter schneller durchführen kann. Die Programme, die den Vorgang durchführen, benötigen dafür einige initiale Parameter und müssen möglicherweise an die Situation angepasst werden. Anschließend kann die Kalibrierung allerdings ohne Benutzerinteraktion durchgeführt werden.
+
+Durch den modularen Aufbau von ROS hat man die Möglichkeit, mehr als einen Kameratyp zu kalibrieren, und man ist ebenfalls nicht an den UR5 Roboter gebunden. 
+
+Der Aufwand für den Benutzer sinkt signifikant. Er muss nicht mehr zwischen dem Umstellen der Kamera oder des Kalibrierungsmusters und der Benutzung des Rechners hin und her wechseln. Außerdem muss er nicht darauf achten, welche Positionen und Orientierungen er bereits abgearbeitet hat, damit das ganze Bild abgedeckt ist und verschiedene Distanzen und Orientierungen exploriert wurden. Stattdessen muss er lediglich die Programme starten, möglicherweise die Parameter an die Situation anpassen, mit dem Notausschalter in der Nähe die Bewegung des Roboters kontrollieren und zum Schluss überprüfen, ob genügend Positionen und Orientierungen aufgenommen wurden.
+
+Möchte man mehrere Kameras des selben Typs kalibrieren, muss man diese lediglich nacheinander auf dem Stativ befestigen und für jede Kamera das Programm starten. Andere Anpassungen müssen nicht vorgenommen werden.
+
+Um das Programm noch intuitiver und einfacher zu bedienen, sind verschiedene Verbesserungen denkbar.
+
+Im jetzigen Zustand muss der Benutzer auf einige Zentimeter genau ausmessen, wo sich die Kamera befindet und sicherstellen, dass diese exakt auf den Roboter gerichtet ist. Die Position der Kamera in Relation zum Kalibrierungsmuster kann jedoch bereits im ersten Bild, in dem das Muster zu sehen ist, berechnet werden. Es wäre also denkbar, dass der Roboter zunächst in eine Grundposition fährt und der Benutzer anschließend so die Kamera vor dem Roboter platziert, dass das Muster gut zu erkennen sein sollte. Anschließend wird das Muster im Bild gesucht, um daraus die Position und Orientierung der Kamera im Raum zu bestimmen. Danach fährt das Programm wie gewohnt fort. Damit muss der Benutzer nicht mehr die Position der Kamera vermessen.
+
+Einige Kamerasysteme bestehen intern aus mehreren Kameras, wie zum Beispiel die Kinect Kameras von Microsoft. Bei diesen Kameras ist nicht nur die Kalibrierung der einzelnen Kameras wichtig, sondern auch die extrinsischen Parameter, also die Position und Orientierung der Kameras zueinander. HALCON ist bereits in der Lage, mehrere Kameras zu kalibrieren. Die Programme müssen allerdings erweitert werden, damit die zusätzlichen Kameras kalibriert werden und auch die extrinsischen Parameter gefunden werden.
+
+Häufig bilden Aktuatoren wie ein Roboterarm und Sensoren wie eine Kamera eine Einheit in einem Roboter. In diesen Fällen ist nicht nur die Kalibrierung der Kamera wichtig, sondern auch die Kalibrierung des Arms. Ein Arm lässt sich dabei auf eine ähnliche Art und Weise kalibrieren: Man befestigt ein Muster am Ende des Arms und anschließend die Position des Musters mit einer Kamera bestimmt. Nachdem man also die Kamera kalibriert hat, könnten man diese nun benutzen, um im nächsten Schritt den Arm zu kalibrieren.

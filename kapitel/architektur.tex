@@ -1,65 +1,61 @@
 %!TEX root = ../bachelorthesis.tex
 \chapter{Architektur}
+\label{chap:architektur}
 Für dieses Projekt wurden mehrere Softwareprogramme integriert, teilweise wurden eigene Programme geschrieben. In den folgenden Abschnitten wird ein Gesamtüberblick gegeben und die einzelnen Programme werden hinsichtlich ihrer Aufgaben detailliert beschrieben.
 
 \section{Gesamtübersicht} % (fold)
 \label{sec:gesamtübersicht}
-In \autoref{img:overview} ist die Architektur graphisch dargestellt. Jedes Element stellt dabei eine ROS-Node dar, also ein einzelnes Programm. Elemente, die blau eingefärbt sind, stehen für Programme, die von anderen Benutzern programmiert wurden und gegebenenfalls zu diesem Einsatzzweck angepasst wurden. Programme, die im Rahmen dieser Bachelorarbeit programmiert wurden, sind grün eingefärbt.
-
-\todo{Andere Namen für die Nodes}
-
+In \autoref{img:overview} ist die Architektur graphisch dargestellt. Jeder Knoten stellt dabei eine ROS-Node dar, also ein einzelnes Programm. Knoten, die blau eingefärbt sind, stehen für Programme, die von anderen Benutzern programmiert wurden und gegebenenfalls zu diesem Einsatzzweck angepasst wurden. Programme, die im Rahmen dieser Bachelorarbeit programmiert wurden, sind grün eingefärbt.
 \begin{figure}[!hbt]
 	\centering
 	\vspace{1ex}
 	\includegraphics[scale=0.6]{../images/overview}
-	\caption[Übersicht über die Architektur]{\label{img:overview} Übersicht über die Architektur}
+	\caption[Übersicht über die Architektur. Die Pfeile verdeutlichen die Kommunikation zwischen den Knoten.]{\label{img:overview} Übersicht über die Architektur}
 	\vspace{1ex}
 \end{figure}
-\todo{Alternative für Element}
-Die beiden Elemente ur\_moder\_driver und libuvc\_camera steuern direkt die Hardware an. Im Fall von ur\_modern\_driver wird der UR5-Arm gesteuert, libuvc\_camera kommuniziert mit der Webcam.
+\todo{Übersetzung von Architekturnamen zu tatsächlichen Klassennamen fehlt.}
+Die Robot Hardware Interface Node stellt eine Schnittstelle bereit, damit ROS-Pakete wie MoveIt! den Roboter steuern können.
 
-Das Element universal\_robot stellt eine abstrahierte Schnittstelle zur Steuerung des Roboterarms zur Verfügung.
+Die Moveit Path Planning Node startet MoveIt! und die dazugehörigen Programme, um MoveIt! zum Planen und Ausführen von Bewegungen nutzen zu können.
 
-Die beiden Elemente MoveArmServer und caltab\_detector\_node wurden im Rahmen dieser Bachelorarbeit entwickelt. MoveArmServer bietet Funktionen zur Steuerung des Arms, die speziell in diesem Projekt benötigt werden. caltab\_detector\_node verarbeitet die Bildinformationen.
+Die Camera Interface Node veröffentlicht das Kamerabild über einen ROS Topic.
 
-Der CalibrationController wurde ebenfalls im Rahmen dieser Bachelorarbeit entwickelt. Dieses Programm steuert den gesamten Ablauf, kommuniziert dazu mit den beiden selbstgeschrieben Nodes und sorgt dafür, dass der Roboter sich an die gewünschten Positionen bewegt und die Bilder im richtigen Moment aufgenommen werden. Zum Schluss werden dem Benutzer dann die ermittelten Parameter zurückgegeben.
+Die Client Side Path Planning Node stellt eine weitere Abstraktionsschicht zur Bewegung des Arms zur Verfügung. Sie bereitet die Positionsziele für MoveIt! auf und startet die Auswertung von Bildern.
 
-Durch diese Architektur und den Einsatz von ROS hat man den Vorteil, dass man weder an den UR5 Roboterarm noch an die Webcam mit libuvc gebunden ist, um eine Kamera mit Hilfe eines Roboters zu kalibrieren. Die caltab\_detector\_node benötigt lediglich ein Topic, auf dem die Bilder der eingesetzten Kamera veröffentlicht werden. Dies kann man wie in diesem Fall mit libuvc\_camera machen, aber abhängig von der eingesetzten Kamera kann man auch andere Programme benutzen, die diese Funktionalität zur Verfügung stellen. Man kann ebenso den Roboterarm austauschen. Wichtig ist nur, dass es für den Roboter eine MoveIt!-Integration gibt und sich an dessen Ende ein Kalibrierungsmuster befestigen lässt. 
+Die Computer Vision Node wertet die empfangenen Bilder der Kamera aus.
 
-\section{ur\_modern\_driver} % (fold)
+Die Highlevel Executive Node steuert den gesamten Ablauf.
+
+\section{Robot Hardware Interface Node} % (fold)
 \label{sec:ur_modern_driver}
-Diese Node wurde bereits als Paket in ROS veröffentlicht, siehe \cite{ur_modern_driver}. Sie ist die Schnittstelle zwischen dem Roboterarm UR5 und dem ROS Framework. Da dieses Paket nicht für die in diesem Projekt benutzte Version von ROS entwickelt wurde, wurden einige wenige Anpassungen am Sourcecode vorgenommen, um das es in diesem Projekt benutzen zu können.
+Für diese Node wird das Paket \texttt{ur\_modern\_driver} verwendet, siehe \cite{ur_modern_driver}. Sie ist die Schnittstelle zwischen dem Roboterarm UR5 und dem ROS Framework. Da dieses Paket nicht für die in diesem Projekt benutzte Version von ROS entwickelt wurde, wurden einige wenige Anpassungen am Sourcecode vorgenommen, um das es in diesem Projekt benutzen zu können.
 
-\section{universal\_robot} % (fold)
+\section{Moveit Path Planning Node} % (fold)
 \label{sec:universal_robot}
-Diese Node wurde ebenfalls als Paket in ROS veröffentlicht, siehe \cite{universal_robot}. In dieser Node ist MoveIt! integriert, welches zum Bewegen des Roboterarms benutzt wird. Man kann diesem Programm als Ziel die gewünschte Position und Orientierung des Roboterarms übergeben; das Programm berechnet dann die Abfolge der Roboterkonfigurationen, die zum Erreichen dieses Ziels benötigt werden und schickt die Abfolge dann an den ur\_modern\_driver. 
+Auch für diese Node wird ein öffentlich verfügbares Paket genommen: \texttt{universal\_robot}, siehe \cite{universal_robot}. In dieser Node ist MoveIt! integriert, welches zum Bewegen des Roboterarms benutzt wird. Siehe \autoref{ssub:moveit} für weitere Details über MoveIt!.
 
-Diese Node wird im Projekt von dem Programm MoveArmServer angesprochen. Dazu stellt sie über MoveIt! einige Schnittstellen bereit, die in diesem Fall benutzt werden, um die Position und Orientierung des Kalibrierungsmusters zu verändern.
-
-\section{libuvc\_camera} % (fold)
+\section{Camera Interface Node} % (fold)
 \label{sec:libuvc_camera}
-Auch diese Node ist als Paket in ROS verfügbar. Sie dient dazu, das Bild der angeschlossenen Webcam über ROS verfügbar zu machen. In dem Script, mit dem diese Node gestartet wird, lassen sich verschiedene Parameter einstellen. In diesem Fall wurde mittels der Vendor-ID und Product-ID die zu benutzende Kamera definiert, die Auflösung wurde auf Full-HD gesetzt und der Fokus wurde so eingestellt, dass der Bereich, in dem sich das Kalibrierungsmuster befinden wird, scharf zu sehen ist.
+Auch diese Node ist als Paket \texttt{libuvc\_camera} in ROS verfügbar. Sie dient dazu, das Bild der angeschlossenen Webcam über ROS verfügbar zu machen. In dem Script, mit dem diese Node gestartet wird, lassen sich verschiedene Parameter einstellen. In diesem Fall wurde mittels der Vendor-ID und Product-ID die zu benutzende Kamera definiert, die Auflösung wurde auf Full-HD gesetzt und der Fokus wurde so eingestellt, dass der Bereich, in dem sich das Kalibrierungsmuster befinden wird, scharf zu sehen ist.
 
-Die Node veröffentlicht die Bilder der Kamera über Topics. Das Programm caltab\_detector\_node empfängt die Bilder und wertet sie aus.
-
-\section{MoveArmServer} % (fold)
+\section{Client Side Path Planning Node} % (fold)
 \label{sec:movearmserver}
-Dieses Programm wurde im Rahmen dieser Bachelorarbeit selbst entwickelt. Es dient dazu, dem CalibrationController eine weitere Abstraktionsschicht zum Bewegen des Arms zu bieten.
+Dieses Programm wurde im Rahmen dieser Bachelorarbeit selbst entwickelt. Es dient dazu, der Highlevel Executive Node eine weitere Abstraktionsschicht zum Bewegen des Arms zu bieten.
 
-Dazu wurde ein Actionserver erstellt, der die Position des Kalibrierungsmusters als Auftrag erhält. Zusätzlich kann als weiterer Parameter für den Auftrag die Neigung des Musters angegeben werden. Das Programm berechnet dann für die gewünschte Position zunächst die Orientierung für den Roboterendpunkt, damit das Muster senkrecht zur Kamera steht. Anschließend wird zu der berechneten Orientierung die gewünschte Neigung hinzugefügt. Die so errechnete Position und Orientierung wird dann an MoveIt! übergeben. Abhängig davon, ob MoveIt! den Arm erfolgreich bewegen konnte, informiert der MoveArmServer den CalibrationController, ob der Auftrag erfolgreich ausgeführt wurde.
+Dazu wurde ein Actionserver erstellt, der die Position des Kalibrierungsmusters als Auftrag erhält. Zusätzlich kann als weiterer Parameter für den Auftrag die Neigung des Musters angegeben werden. Das Programm berechnet dann für die gewünschte Position zunächst die Orientierung für den Roboterendpunkt, damit das Muster senkrecht zur Kamera steht. Anschließend wird zu der berechneten Orientierung die gewünschte Neigung hinzugefügt. Die so errechnete Position und Orientierung wird dann an MoveIt! übergeben. Abhängig davon, ob MoveIt! den Arm erfolgreich bewegen konnte, informiert diese Node den Highlevel Executive Controller, ob der Auftrag erfolgreich ausgeführt wurde.
 
-\section{caltab\_detector\_node} % (fold)
+\section{Computer Vision Node} % (fold)
 \label{sec:caltab_detector_node}
 Auch dieses Programm wurde selbst entwickelt. Es benutzt die Bibliothek von HALCON, um in den Bildern, die es von der Kamera empfängt, nach dem Kalibrierungsmuster zu suchen und die Kalibrierung durchzuführen.
 
-Diese Node bietet zwei Actionserver an. Der erste Actionserver erwartet einen Auftrag, um in den aktuellen Bildern nach dem Kalibrierungsmuster zu suchen. Dazu wird ein Parameter übergeben, der angibt, wie viele Bilder ausgewertet werden sollen. Die Algorithmen von HALCON finden nicht immer im ersten Versuch das Muster, daher lässt sich die Anzahl der Bilder mit Hilfe dieses Parameters definieren. Die Node meldet dem CalibrationController zurück, ob nach der angegeben Anzahl der Bilder das Muster gefunden wurde oder nicht.
+Diese Node bietet zwei Actionserver an. Der erste Actionserver erwartet einen Auftrag, um in den aktuellen Bildern nach dem Kalibrierungsmuster zu suchen. Dazu wird ein Parameter übergeben, der angibt, wie viele Bilder ausgewertet werden sollen. Die Algorithmen von HALCON finden nicht immer im ersten Versuch das Muster, daher lässt sich die Anzahl der Bilder mit Hilfe dieses Parameters definieren. Die Node meldet dem Highlevel Executive Controller zurück, ob nach der angegeben Anzahl der Bilder das Muster gefunden wurde oder nicht.
 
-Der zweite Actionserver nimmt den Auftrag zur Durchführung der Kalibrierung an. Dazu werden die Bilder, in denen das Muster zu sehen war, ausgewertet. Danach werden die errechneten intrinsischen Parameter, die Verzeichnungsparameter sowie der ermittelte durchschnittliche Fehler an den CalibrationController zurückgegeben.
+Der zweite Actionserver nimmt den Auftrag zur Durchführung der Kalibrierung an. Dazu werden die Bilder, in denen das Muster zu sehen war, ausgewertet. Danach werden die errechneten intrinsischen Parameter, die Verzeichnungsparameter sowie der ermittelte durchschnittliche Fehler an den Highlevel Executive Controller zurückgegeben.
 
-\section{CalibrationController} % (fold)
+\section{Highlevel Executive Controller} % (fold)
 \label{sec:calibrationcontroller}
 Diese letzte Node wurde ebenfalls selbst entwickelt. Sie dient dazu, den gesamten Ablauf der Kalibrierung zu steuern, indem sie die Actionserver mit Aufgaben versorgt. Zunächst übergibt der Benutzer dem Programm die Position der Kamera in Relation zur Basis des Roboterarms und die initialen intrinsischen Parameter. Dann wird aus diesen Werten das Sichtfeld der Kamera bestimmt. Mit diesem Sichtfeld werden danach die verschiedenen Distanzen zur Kamera berechnet und anschließend die Positionen für das Kalibrierungsmuster, damit dieses das ganze Sichtfeld der Kamera abdeckt.
 
-Diese Positionen werden nacheinander an den MoveArmServer übergeben. Für jede Position wird das Muster für um 10$^\circ$, 20$^\circ$, 30$^\circ$ und 40$^\circ$ nach oben, unten, rechts und links geneigt. Hat der Actionserver den Auftrag erfolgreich ausgeführt, wird der caltab\_detector\_node der Auftrag übergeben, in dem Kamerabild nach dem Muster zu suchen. Ist dieser Auftrag abgeschlossen, wird die nächste Position angesteuert.
+Diese Positionen werden nacheinander an den MoveArmServer übergeben. Für jede Position wird das Muster nach oben, unten, rechts und links geneigt. Hat der Actionserver den Auftrag erfolgreich ausgeführt, wird der Computer Vision Node der Auftrag übergeben, in dem Kamerabild nach dem Muster zu suchen. Ist dieser Auftrag abgeschlossen, wird die nächste Position angesteuert.
 
 Wurden alle Positionen abgearbeitet, wird zum Schluss der Auftrag zur Kalibrierung durchgeführt. Die dadurch erhaltenen Parameter werden dem Benutzer angezeigt und das Programm hat seine Durchführung beendet.

@@ -24,9 +24,10 @@
 % Sprache: Deutsch
 \usepackage[ngerman]{babel} % Silbentrennung
 % PDF
-\usepackage[ngerman,pdfauthor={Martin Bretschneider},  pdfauthor={Martin Bretschneider}, pdftitle={Vorlage für LaTeX}, breaklinks=true,baseurl={http://www.bretschneidernet.de/tips/thesislatex.html}]{hyperref}
+\usepackage[ngerman]{hyperref}
 \usepackage[final]{microtype} % mikrotypographische Optimierungen
 \usepackage{url} % ermögliche Links (URLs)
+\def\UrlBreaks{\do\/\do-}
 \usepackage{pdflscape} % einzelne Seiten drehen können
 % Tabellen
 \usepackage{multirow} % Tabellen-Zellen über mehrere Zeilen
@@ -36,6 +37,7 @@
 \usepackage{array}
 %  Bibliographie
 \usepackage{bibgerm} % Umlaute in BibTeX
+
 % Bilder
 \usepackage{graphicx} % Bilder
 \usepackage{color} % Farben
@@ -53,18 +55,21 @@
 \definecolor{grau}{gray}{0.25}
 \lstset{
 	extendedchars=true,
-	basicstyle=\tiny\ttfamily,
-	%basicstyle=\footnotesize\ttfamily,
+	basicstyle=\ttfamily,
+  % basicstyle=\tiny\ttfamily,
+	% basicstyle=\footnotesize\ttfamily,
 	tabsize=2,
 	keywordstyle=\textbf,
 	commentstyle=\color{grau},
 	stringstyle=\textit,
-	numbers=left,
-	numberstyle=\tiny,
+  frame=lines,
+	% numbers=left,
+	% numberstyle=\tiny,
 	% für schönen Zeilenumbruch
-	breakautoindent  = true,
+	% breakautoindent  = true,
 	breakindent      = 2em,
 	breaklines       = true,
+  breakatwhitespace=true,
 	postbreak        = ,
 	prebreak         = \raisebox{-.8ex}[0ex][0ex]{\Righttorque},
 }
