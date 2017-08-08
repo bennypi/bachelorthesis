@@ -6,6 +6,8 @@ Für dieses Projekt wurden mehrere Softwareprogramme integriert, teilweise wurde
 \section{Gesamtübersicht} % (fold)
 \label{sec:gesamtübersicht}
 In \autoref{img:overview} ist die Architektur graphisch dargestellt. Jeder Knoten stellt dabei eine ROS-Node dar, also ein einzelnes Programm. Knoten, die blau eingefärbt sind, stehen für Programme, die von anderen Benutzern programmiert wurden und gegebenenfalls zu diesem Einsatzzweck angepasst wurden. Programme, die im Rahmen dieser Bachelorarbeit programmiert wurden, sind grün eingefärbt.
+
+Um die Übersicht über die Architektur möglichst generisch zu halten, haben die Nodes einen sehr deskriptiven Namen erhalten. Die Programme, die in der Anwendung gestartet werden, haben daher teilweise andere Namen.
 \begin{figure}[!hbt]
 	\centering
 	\vspace{1ex}
@@ -13,22 +15,10 @@ In \autoref{img:overview} ist die Architektur graphisch dargestellt. Jeder Knote
 	\caption[Übersicht über die Architektur. Die Pfeile verdeutlichen die Kommunikation zwischen den Knoten.]{\label{img:overview} Übersicht über die Architektur}
 	\vspace{1ex}
 \end{figure}
-\todo{Übersetzung von Architekturnamen zu tatsächlichen Klassennamen fehlt.}
-Die Robot Hardware Interface Node stellt eine Schnittstelle bereit, damit ROS-Pakete wie MoveIt! den Roboter steuern können.
-
-Die Moveit Path Planning Node startet MoveIt! und die dazugehörigen Programme, um MoveIt! zum Planen und Ausführen von Bewegungen nutzen zu können.
-
-Die Camera Interface Node veröffentlicht das Kamerabild über einen ROS Topic.
-
-Die Client Side Path Planning Node stellt eine weitere Abstraktionsschicht zur Bewegung des Arms zur Verfügung. Sie bereitet die Positionsziele für MoveIt! auf und startet die Auswertung von Bildern.
-
-Die Computer Vision Node wertet die empfangenen Bilder der Kamera aus.
-
-Die Highlevel Executive Node steuert den gesamten Ablauf.
 
 \section{Robot Hardware Interface Node} % (fold)
 \label{sec:ur_modern_driver}
-Für diese Node wird das Paket \texttt{ur\_modern\_driver} verwendet, siehe \cite{ur_modern_driver}. Sie ist die Schnittstelle zwischen dem Roboterarm UR5 und dem ROS Framework. Da dieses Paket nicht für die in diesem Projekt benutzte Version von ROS entwickelt wurde, wurden einige wenige Anpassungen am Sourcecode vorgenommen, um das es in diesem Projekt benutzen zu können.
+Für diese Node wird das Paket \texttt{ur\_modern\_driver} verwendet, siehe \cite{ur_modern_driver}. Sie ist die Schnittstelle zwischen dem Roboterarm UR5 und dem ROS Framework. Da dieses Paket nicht für die in diesem Projekt benutzte Version von ROS entwickelt wurde, waren einige wenige Anpassungen am Sourcecode nötig, um es in diesem Projekt benutzen zu können.
 
 \section{Moveit Path Planning Node} % (fold)
 \label{sec:universal_robot}
@@ -36,7 +26,7 @@ Auch für diese Node wird ein öffentlich verfügbares Paket genommen: \texttt{u
 
 \section{Camera Interface Node} % (fold)
 \label{sec:libuvc_camera}
-Auch diese Node ist als Paket \texttt{libuvc\_camera} in ROS verfügbar. Sie dient dazu, das Bild der angeschlossenen Webcam über ROS verfügbar zu machen. In dem Script, mit dem diese Node gestartet wird, lassen sich verschiedene Parameter einstellen. In diesem Fall wurde mittels der Vendor-ID und Product-ID die zu benutzende Kamera definiert, die Auflösung wurde auf Full-HD gesetzt und der Fokus wurde so eingestellt, dass der Bereich, in dem sich das Kalibrierungsmuster befinden wird, scharf zu sehen ist.
+Auch diese Node ist als Paket \texttt{libuvc\_camera} in ROS verfügbar. Sie dient dazu, das Bild der angeschlossenen Kamera über ROS verfügbar zu machen. In dem Script, mit dem diese Node gestartet wird, lassen sich verschiedene Parameter einstellen. In diesem Fall wurde mittels der Vendor-ID und Product-ID die zu benutzende Kamera definiert, die Auflösung wurde auf Full-HD gesetzt und der Fokus wurde so eingestellt, dass der Bereich, in dem sich das Kalibrierungsmuster befinden wird, scharf zu sehen ist.
 
 \section{Client Side Path Planning Node} % (fold)
 \label{sec:movearmserver}

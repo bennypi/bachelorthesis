@@ -32,7 +32,7 @@ Die dritte Node startet RViz, um die Planning Scene visuell überprüfen zu kön
   $ roslaunch ur5_moveit_config moveit_rviz.launch config:=true
 \end{lstlisting}
 
-Damit sind die Nodes gestartet, um den Roboter bewegen zu können. Damit MoveIt! über Hindernisse in der Umgebung, wie zum Beispiel der Tisch oder Wände, Bescheid weiß, wird die Node \texttt{publish\_collision\_objects} gestartet. In dieser sind die geometrischen Informationen über die Umgebung gespeichert. Ändert sich die Umgebung, muss auch diese Node angepasst werden.
+Damit sind die Nodes gestartet, um den Roboter bewegen zu können. Damit MoveIt! über Hindernisse in der Umgebung, wie zum Beispiel der Tisch oder Wände, informiert ist, wird die Node \texttt{publish\_collision\_objects} gestartet. In dieser sind die geometrischen Informationen über die Umgebung gespeichert. Ändert sich die Umgebung, muss auch diese Node angepasst werden.
 \begin{lstlisting}[language=bash]
   $ rosrun robot_assisted_calibration publish_collision_objects.py
 \end{lstlisting}
@@ -43,7 +43,7 @@ Um die Bilder der Kamera in ROS zu veröffentlichen, wird ein weiteres launchfil
   $ roslaunch camera.launch
 \end{lstlisting}
 
-Nun sind alle Hardware-spezifischen Nodes gestartet, sodass nun die Programme zur Kalibrierung gestartet werden können. Wir beginnen mit der Node, die das maschinelle Sehen übernimmt. Hier ist zu beachten, dass in diesem Fall im aktuellen Verzeichnis ein neuer Ordner erstellt wird, in dem die Bilder gespeichert werden. Soll dieser Ordner in einem anderen Verzeichnis erstellt werden, muss dieses Verzeichnis über den Parameter \texttt{image\_path:=/Pfad/Zum/Verzeichnis} angegeben werden.
+Nun sind alle Hardware-spezifischen Nodes gestartet, sodass nun die Programme zur Kalibrierung gestartet werden können. Es wir mit der Node begonnen, die das maschinelle Sehen übernimmt. Hier ist zu beachten, dass in diesem Fall im aktuellen Verzeichnis ein neuer Ordner erstellt wird, in dem die Bilder gespeichert werden. Soll dieser Ordner in einem anderen Verzeichnis erstellt werden, muss dieses Verzeichnis über den Parameter \texttt{image\_path:=/Pfad/Zum/Verzeichnis} angegeben werden.
 \begin{lstlisting}[language=bash]
   $ roslaunch caltab_detector caltab_detector.launch
 \end{lstlisting}
@@ -53,7 +53,7 @@ Als nächstes wird die Node gestartet, die die Befehle an MoveIt! übermittelt. 
   $ rosrun robot_assisted_calibration MoveArmServer.py
 \end{lstlisting}
 
-Schließlich wird der CalibrationController gestartet, der direkt mit der Kalibrierung startet:
+Schließlich wird der CalibrationController gestartet, der direkt mit der Kalibrierung beginnt:
 \begin{lstlisting}[language=bash]
   $ roslaunch robot_assisted_calibration calibration_controller.launch
 \end{lstlisting}
