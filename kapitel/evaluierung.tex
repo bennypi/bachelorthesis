@@ -13,9 +13,9 @@ In diesem Kapitel wird die Durchführung einer robotergestützten Kalibrierung b
 \caption{Der Aufbau zur Kalibrierung von der Seite betrachtet.}\label{img:experiment_side}
 \end{figure}
 
-Die Kalibrierung wurde mit den folgenden Komponenten durchgeführt: Als Kamera wurde die Microsoft LifeCam Studio benutzt. Sie bietet ein Farbbild mit einer Auflösung von 1920x1080 Pixeln an. Der Sensor hat laut Datenblatt eine Höhe von 3,27 mm und eine Breite von 5,85 mm. Die Brennweite beträgt 3,7 mm. Als Roboter wird der UR5 von Universal Robotics eingesetzt. Als Kalibrierungsmuster wird das Muster aus \autoref{img:caltab_hex_10x11} benutzt. Es wurde auf DinA4-Größe gedruckt.
+Die Kalibrierung wurde mit den folgenden Komponenten durchgeführt: Als Kamera wurde die Microsoft LifeCam Studio benutzt. Sie bietet ein Farbbild mit einer Auflösung von 1920x1080 Pixeln an. Der Sensor hat laut Datenblatt eine Höhe von 6,6 mm und eine Breite von 5,85 mm. Die Brennweite beträgt 5 mm. Als Roboter wird der UR5 von Universal Robotics eingesetzt. Als Kalibrierungsmuster wird das Muster aus \autoref{img:caltab_hex_10x11} benutzt. Es wurde auf DinA4-Größe gedruckt.
 
-Die Kamera steht von der Basis des Roboters aus gesehen an der Position x=-0,95, y=0 und z=0.35. Die Kamera ist so ausgerichtet, dass der Mittelpunkt des Bildes ungefähr mittig über der Basis in einer Höhe von 45 cm liegt. Die weiteren Parameter wie die Faktoren zur Distanzbestimmung oder die Verzögerung zwischen dem Erreichen einer Position und der Aufnahme des Bildes werden nicht verändert.
+Die Kamera steht von der Basis des Roboters aus gesehen an der Position x=-0,8, y=0,5 und z=0.35. Die Kamera ist so ausgerichtet, dass der Mittelpunkt des Bildes ungefähr mittig über der Basis in einer Höhe von 45 cm liegt. Die weiteren Parameter wie die Faktoren zur Distanzbestimmung oder die Verzögerung zwischen dem Erreichen einer Position und der Aufnahme des Bildes werden nicht verändert.
 
 Der UR5-Roboter muss über das angeschlossene Tablet gestartet werden. Zusätzlich muss die IP-Adresse für den Roboter bekannt sein. Auch die Kamera muss über USB mit dem Rechner verbunden sein.
 
@@ -34,32 +34,46 @@ Die dritte Node startet RViz, um die Planning Scene visuell überprüfen zu kön
 
 Damit sind die Nodes gestartet, um den Roboter bewegen zu können. Damit MoveIt! über Hindernisse in der Umgebung, wie zum Beispiel der Tisch oder Wände, informiert ist, wird die Node \texttt{publish\_collision\_objects} gestartet. In dieser sind die geometrischen Informationen über die Umgebung gespeichert. Ändert sich die Umgebung, muss auch diese Node angepasst werden.
 \begin{lstlisting}[language=bash]
-  $ rosrun robot_assisted_calibration publish_collision_objects.py
+  $ rosrun calibration_executive publish_collision_objects.py
 \end{lstlisting}
 
-Um die Bilder der Kamera in ROS zu veröffentlichen, wird ein weiteres launchfile gestartet. Diese gehört nicht zu einen ROS-Paket, daher muss es aus dem Verzeichnis gestartet werden, in dem es liegt, in diesem Fall im Order libuvc: \todo{In das robot-assisted-calibration Paket verschieben}
+Um die Bilder der Kamera in ROS zu veröffentlichen, wird ein weiteres launchfile gestartet. Dieses liegt im calibration\_executive Paket:
 \begin{lstlisting}[language=bash]
-  $ cd libuvc
-  $ roslaunch camera.launch
+  $ roslaunch calibartion_executive lifecam_studio.launch
 \end{lstlisting}
 
 Nun sind alle Hardware-spezifischen Nodes gestartet, sodass nun die Programme zur Kalibrierung gestartet werden können. Es wir mit der Node begonnen, die das maschinelle Sehen übernimmt. Hier ist zu beachten, dass in diesem Fall im aktuellen Verzeichnis ein neuer Ordner erstellt wird, in dem die Bilder gespeichert werden. Soll dieser Ordner in einem anderen Verzeichnis erstellt werden, muss dieses Verzeichnis über den Parameter \texttt{image\_path:=/Pfad/Zum/Verzeichnis} angegeben werden.
 \begin{lstlisting}[language=bash]
-  $ roslaunch caltab_detector caltab_detector.launch
+  $ roslaunch calibration_perception caltab_detector.launch
 \end{lstlisting}
 
-Als nächstes wird die Node gestartet, die die Befehle an MoveIt! übermittelt. Dies passiert mit dem folgenden Befehl:
+Mit dem nächsten launchfile wird die client Path Planning Node und der High Level Executive gestartet, damit die Kalibrierung beginnt:
 \begin{lstlisting}[language=bash]
-  $ rosrun robot_assisted_calibration MoveArmServer.py
+  $ roslaunch calibration_executive high_level_executive.launch
 \end{lstlisting}
 
-Schließlich wird der CalibrationController gestartet, der direkt mit der Kalibrierung beginnt:
-\begin{lstlisting}[language=bash]
-  $ roslaunch robot_assisted_calibration calibration_controller.launch
-\end{lstlisting}
+Das Bewegen des Roboterarms an die errechneten Positionen und das Auswerten der Bilder dauert ungefähr 10 Minuten. Dabei wurden 54 Bilder aufgenommen. Die Ergebnisse für diese Kalibrierung sind in Tabelle \autoref{tab:results_test} aufgeführt.
+\begin{table}
+\begin{tabularx}{\textwidth}{|l|X|}
+	\hline
+	Parametername & Wert \\\hline
+	amount\_of\_images & 54\\\hline
+	distortion\_coefficients / k1 & -668.3497992731012 \\\hline
+	distortion\_coefficients / k2 & -2558688.8393200147 \\\hline
+	distortion\_coefficients / k3 & 4026655990788.707 \\\hline
+	distortion\_coefficients / p1& 0.021390840982324955 \\\hline
+	distortion\_coefficients / p2 & -0.13018888894479966 \\\hline
+	error & 0.21944105843222872 \\\hline
+	intrinsics / cell\_height & 3.425925925925926e-06 \\\hline
+	intrinsics / cell\_width & 3.4390925635614368e-06 \\\hline
+	intrinsics / focal\_length & 0.004996258612286566 \\\hline
+	image\_center\_x & 965.9302349309 \\\hline
+	image\_center\_y & 542.5815540282198 \\\hline
+\end{tabularx}
+\caption{Ergebnisse der Kalibrierung}
+\label{tab:results_test}
+\end{table}
 
-Das Bewegen des Roboterarms an die errechneten Positionen und das Auswerten der Bilder dauert ungefähr 15 Minuten. Dabei wurden \todo{???} Positionen erreicht. Insgesamt wurden \todo{???} Bilder aufgenommen. Die Ergebnisse für diese Kalibrierung sind: \todo{???}
-
-Da alle bis auf eine Position erreicht wurden, kann man sich ziemlich sicher sein, dass das ganze Sichtfeld und auch verschiedene Distanzen abgedeckt wurden. 
+Da an jeder Position mindestens ein Kalibrierungsmuster gesehen wurde, kann man sich ziemlich sicher sein, dass das ganze Sichtfeld und auch verschiedene Distanzen abgedeckt wurden. 
 
 Will man eine ähnlich gute Abdeckung von Hand erreichen, wird die Aufnahme der Fotos ungefähr eine Stunde dauern. Außerdem muss man bei der manuellen Aufnahme der Fotos selber darauf achten, dass das ganze Bild exploriert wurde und ausreichend viele unterschiedliche Orientierungen und Distanzen gewählt wurden. Durch den Einsatz des Roboters hat man also nicht nur einen Zeitvorteil, sondern man kann auch die Qualität der Aufnahmen besser abschätzen.

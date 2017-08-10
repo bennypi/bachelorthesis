@@ -1,7 +1,7 @@
 %!TEX root = ../bachelorthesis.tex
 \chapter{Grundlagen}
 \label{chap:grundlagen}
-Kameras sind viel genutzte Sensoren, da sie teilweise recht günstig hergestellt werden und sie aufgrund ihrer Ähnlichkeit zum menschlichen Auge gute Sensoren sind, um die Umgebung zu erfassen. Da sich aber gezeigt hat, dass die Toleranzen bei der Produktion, der Aufbau der Kameras und insbesondere ihrer Linsen, zu Verzerrungen im Bild führen, wurden Modelle entwickelt, um diese Verzerrungen herauszurechnen und das Bild zu korrigieren. Ein häufig genutztes Modell wird im Folgenden beschrieben.
+Kameras sind viel genutzte Sensoren, da sie teilweise recht günstig hergestellt werden und sie aufgrund ihrer Ähnlichkeit zum menschlichen Auge geeignete Sensoren sind, um die Umgebung zu erfassen. Da sich aber gezeigt hat, dass die Toleranzen bei der Produktion, der Aufbau der Kameras und insbesondere ihrer Linsen, zu Verzerrungen im Bild führen, wurden Modelle entwickelt, um diese Verzerrungen herauszurechnen und das Bild zu korrigieren. Ein häufig genutztes Modell wird im Folgenden beschrieben.
 
 \section{Kameramodell} % (fold)
 \label{sec:kameramodell}
@@ -65,7 +65,7 @@ Die zweite Form von Verzeichnung beschreibt die tangentiale Verzeichnung. Siehe 
 
 Es existieren verschiedene Modelle, um diese Verzeichnungen zu beschreiben. Das Divisionsmodell kann die radialsymmetrische Verzeichnung beschreiben und herausrechnen. Dazu wird nur ein einziger Parameter $k$ benötigt. Dies hat den Vorteil, dass nur relativ wenig Bilder benötigt werden, um einen guten Wert für $k$ zu erhalten. Der Nachteil an diesem Modell ist, dass nur die radialsymmetrische Verzeichnung erfasst wird und nicht die tangentiale Verzeichnung. Zudem ist die radialsymmetrische Verzeichnung nicht immer über das ganze Bild gleich verteilt, sodass das Modell nicht jede Situation optimal beschreibt.
 
-Das Polynommodell kann hingegen beide Formen der Verzeichnung beschreiben. Dazu werden insgesamt fünf Parameter benötigt, welche im Folgenden beschrieben werden. Die radialsymmetrische Verzeichnung kann in diesem Modell feiner bestimmt werden und die tangentiale Verzeichnung wird ebenfalls beachtet. Der Nachteil ist, dass mehr Bilder benötigt werden, um gute Ergebnisse zu erhalten. Außerdem ist es bei diesem Modell sehr wichtig, dass unterschiedliche Distanzen beachtet werden und das Muster in jedem Ausschnitt des Bildes zu sehen ist, da ansonsten die Werte für die nicht betrachteten Teile des Bildes extrem schlechte Ergebnisse liefern können.
+Das Polynommodell kann hingegen beide Formen der Verzeichnung beschreiben. Dazu werden insgesamt fünf Parameter benötigt, welche im Folgenden beschrieben werden. Die radialsymmetrische Verzeichnung kann in diesem Modell feiner bestimmt werden. Dies ist hilfreich, da diese Verzeichnung nicht immer gleichmäßig über das ganze Bild auftritt ,sondern abhängig von der Entfernung zum Mittelpunkt unterschiedlich stark sein kann. Die tangentiale Verzeichnung wird ebenfalls beachtet. Der Nachteil ist, dass mehr Bilder benötigt werden, um gute Ergebnisse zu erhalten. Außerdem ist es bei diesem Modell sehr wichtig, dass unterschiedliche Distanzen betrachtet werden und das Muster in jedem Ausschnitt des Bildes zu sehen ist, da ansonsten die Werte für die nicht betrachteten Teile des Bildes extrem schlechte Ergebnisse liefern können.
 
 Um die radialsymmetrische Verzeichnung herauszurechnen, werden die drei Faktoren $k_1, k_2, k_3$ benötigt. Sind diese gegeben, lässt sich die Verzeichnung mit den beiden folgenden Gleichungen korrigieren. $r$ ist der Abstand vom Bildmittelpunkt zu dem Punkt, der korrigiert werden soll. $x', y'$ sind die falsch abgebildeten Punkte, $x,y$ sind die korrigierten Punkte.
 \begin{equation}
@@ -157,7 +157,7 @@ MoveIt! \cite{MoveIt} ist ein Framework, dass die Steuerung eines Roboters abstr
 
 \subsubsection{UR5} % (fold)
 \label{ssub:ur5}
-Der UR5 ist ein Roboterarm von Universal Robots. Dieser ist in drei verschiedenen Größen erhältlich, der UR5 ist die mittlere Größe. Alle UR-Roboter können kollaborierend mit Menschen arbeiten, sie müssen also nicht räumlich getrennt von Menschen arbeiten. Darüber hinaus lassen sie sich mit dem angeschlossenen Touchpad relativ einfach steuern und programmieren. Mit einem Knopf am Touchpad kann man den Roboter durch einfaches Bewegen des Arms an die gewünschte Position bringen und diese als Wegpunkt oder Position abspeichern. 
+Der UR5 ist ein Roboterarm von Universal Robots. Dieser ist in drei verschiedenen Größen erhältlich, der UR5 ist die mittlere Größe. Alle UR-Roboter können kollaborierend mit Menschen arbeiten, sie müssen also nicht räumlich getrennt von Menschen arbeiten. Darüber hinaus lassen sie sich mit dem angeschlossenen Touchpannel relativ einfach steuern und programmieren. Mit einem Knopf am Touchpad kann man den Roboter durch einfaches Bewegen des Arms an die gewünschte Position bringen und diese als Wegpunkt oder Position abspeichern. 
 
 Zusätzlich wurde als ROS-Paket ein Interface geschrieben, um den Roboter auch über ROS und MoveIt! steuern zu können.
 % subsubsection ur5 (end)

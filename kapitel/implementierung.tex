@@ -3,17 +3,25 @@
 \label{chap:implementierung}
 Nachdem der grundsätzliche Aufbau und Ablauf der Kommunikation des Gesamtprogramms beschrieben wurde, werden nun die Details der einzelnen Module dargestellt.
 
+\section{Robot Hardware Interface Node} % (fold)
+\label{sec:robot_hardware_interface_node}
+An diesem Programm wurden nur kleine Änderungen vorgenommen, um zum Einen das Paket mit ROS Kinetic benutzen zu können und zum Anderen um die Bewegung des Arms etwas gleichmäßiger durchführen zu können.
+
 \section{Moveit Path Planning Node} % (fold)
 \label{sec:universal_robot_impl}
 
 An diesem Programm wurden einige Anpassungen vorgenommen. Zum einen wurde die in MoveIt! benutzte Bibliothek zur Lösung der inversen Kinematik KDL durch TRAC\_IK ausgetauscht. Diese Bibliothek wird dazu verwendet, für eine gewünschte Position und Orientierung des Roboterarms die dazu erforderlichen Winkel der Gelenke zu berechnen. Während der Versuche war es teilweise zu beobachten, dass MoveIt! keinen oder nur einen viel zu komplizierten Weg von der Start- zur Zielkonfiguration gefunden hat. Dieses Problem konnte teilweise durch diesen Austausch mit TRAC\_IK behoben werden.
 
-Zusätzlich wurde das URDF in diesem Paket angepasst. Das URDF enthält die geometrischen Informationen über den Roboterarm, wie z.B. die Länge und Form der einzelnen Glieder und die Position der Werkzeugaufnahme des Arms. Wird dem Arm eine Zielposition und Orientierung übergeben, so gilt diese normalerweise für diese Werkzeugaufnahme. Für die Bachelorarbeit wurde jedoch das Kalibrierungsmuster an diese Stelle montiert. Das Muster wurde nicht mittig an der Werkzeugaufnahme angebracht, sondern steht seitlich ab. Daher wurde im URDF der Endpunkt des Arms von der Werkzeugaufnahme auf den Mittelpunkt des Kalibrierungsmusters versetzt. Das führt dazu, dass sich nun nicht mehr die Werkzeugaufnahme des Arms an der Zielposition befindet, sondern der Mittelpunkt des Kalibrierungsmusters.
-\todo{Foto vom Caltab am Endeffector}
+Zusätzlich wurde das URDF in diesem Paket angepasst. Das URDF enthält die geometrischen Informationen über den Roboterarm, wie z.B. die Länge und Form der einzelnen Glieder und die Position der Werkzeugaufnahme des Arms. Wird dem Arm eine Zielposition und Orientierung übergeben, so gilt diese normalerweise für diese Werkzeugaufnahme. Für die Bachelorarbeit wurde jedoch das Kalibrierungsmuster an diese Stelle montiert. Das Muster wurde nicht mittig an der Werkzeugaufnahme angebracht, sondern steht seitlich ab. Daher wurde im URDF der Endpunkt des Arms von der Werkzeugaufnahme auf den Mittelpunkt des Kalibrierungsmusters versetzt. Das führt dazu, dass sich nun nicht mehr die Werkzeugaufnahme des Arms an der Zielposition befindet, sondern der Mittelpunkt des Kalibrierungsmusters. Siehe \autoref{img:caltab_tool} für ein Bild von der Befestigung des Kalibrierungsmusters.
+\begin{figure}
+\centering
+\includegraphics[width=\textwidth]{images/caltab_tool.JPG}
+\caption{Befestigung des Kalibrierungsmusters.}\label{img:caltab_tool}
+\end{figure}
 
 \section{Client Side Path Planning Node} % (fold)
 \label{sec:movearmserver_impl}
-Diese Node wurde in der Programmiersprache Python entwickelt und hat den Namen \texttt{MovementHandler.py}. Sie hat den Auftrag, die Bewegung des Arms zu koordinieren und dazu mit MoveIt! zu kommunizieren.
+Diese Node wurde in der Programmiersprache Python entwickelt und hat den Namen \texttt{MovementHandler.py}. Sie hat den Auftrag, die Bewegung des Arms zu koordinieren und dazu mit MoveIt! zu kommunizieren. Die Node befindet sich zusammen mit der High Level Executive Node in dem ROS-Paket calibration\_executive.
 
 Das Programm erhält beim Start die Position der Kamera in Relation zur Basis des Arms. Außerdem wird ein Actionserver gestartet, der auf Aufgaben vom Typ \texttt{move\_arm} wartet. Zusätzlich wird der Kommunikationskanal zu MoveIt! gestartet.
 
@@ -45,15 +53,20 @@ Mit diesen Winkeln würde nun das Muster orthogonal zur Kamera zeigen. Wurden in
 
 Schließlich muss noch der Rollwinkel $\gamma$ bestimmt werden. In diesem Anwendungsfall soll das Kalibrierungsmuster immer nach außen zeigen und parallel zum Boden stehen, damit die Reichweite des Roboters erhöht wird. Dazu wird die folgende Gleichung gelöst:
 \begin{equation}
-	\gamma = \arctantwo(y_{Roboter}, x_{Roboter}) - \arctantwo(y_{Kamera}, x_{Kamera})
+	a = y_{Roboter} \times x_{Kamera} - y_{Kamera} \times x_{Roboter}
 \end{equation}
-Ist $\gamma > 0$, so befindet sich das Muster von der Kamera aus gesehen in der rechten Hälfte des Bildes. Damit das Muster nach außen zeigt, muss der Rollwinkel 0$^\circ$ betragen. Ist $\gamma < 0$, befindet sich das Muster in der linken Hälfte und der Rollwinkel wird auf 180$^\circ$ gesetzt.
+Ist $a > 0$, so befindet sich das Muster von der Kamera aus gesehen in der rechten Hälfte des Bildes. Damit das Muster nach außen zeigt, muss der Rollwinkel 0$^\circ$ betragen. Ist $a < 0$, befindet sich das Muster in der linken Hälfte und der Rollwinkel wird auf 180$^\circ$ gesetzt.
 
-Wurde die Orientierung berechnet, muss für die Position und Orientierung ein Plan generiert werden, mit dem sich der Arm aus der Startposition zur Zielposition bewegt, ohne dass er mit sich selbst oder der Umgebung kollidiert. Diese Aufgabe übernimmt MoveIt!. Aufgrund des eingesetzten Algorithmus in MoveIt! können für gleiche Start- und Zielpositionen unterschiedliche Pläne erstellt werden, teilweise kann MoveIt! auch keinen Plan finden. Daher werden für jede Aufgabe, die der Actionserver erhält, fünf Pläne von MoveIt! erzeugt. Wenn die gewünschte Position nicht erreichbar ist oder Teile des Roboters oder das Kalibrierungsmuster mit sich selber oder der Umgebung kollidieren würden, sind alle fünf Pläne leer. In diesem Fall wird die Aufgabe abgebrochen und dem Actionclient eine negative Rückmeldung zurückgegeben. Ansonsten wird der Plan ausgewählt, der die geringste Anzahl an Zwischenpositionen enthält, und an MoveIt! zur Ausführung übermittelt. Hat MoveIt! die erfolgreiche Ausführung bestätigt, wird dem Actionclient die Aufgabe positiv bestätigt.
+Wurde die Orientierung berechnet, muss für die Position und Orientierung ein Plan generiert werden, mit dem sich der Arm aus der Startposition zur Zielposition bewegt, ohne dass er mit sich selbst oder der Umgebung kollidiert. Diese Aufgabe übernimmt MoveIt!. Aufgrund des eingesetzten Algorithmus in MoveIt! können für gleiche Start- und Zielpositionen unterschiedliche Pläne erstellt werden, teilweise kann MoveIt! auch keinen Plan finden. Daher werden für jede Aufgabe, die der Actionserver erhält, fünf Pläne von MoveIt! erzeugt. Wenn die gewünschte Position nicht erreichbar ist oder Teile des Roboters oder das Kalibrierungsmuster mit sich selber oder der Umgebung kollidieren würden, sind alle fünf Pläne leer. In diesem Fall wird die Aufgabe abgebrochen und dem Actionclient eine negative Rückmeldung zurückgegeben. Ansonsten wird der Plan ausgewählt, der die geringste Anzahl an Zwischenpositionen enthält, und an MoveIt! zur Ausführung übermittelt. Hat MoveIt! die erfolgreiche Ausführung bestätigt, wird dem Actionclient die Aufgabe positiv bestätigt. Siehe \autoref{img:flow_movement_controller} für ein Ablaufdiagramm.
+\begin{figure}
+\centering
+\includegraphics[width=\textwidth]{images/movement_handler}
+\caption{Ablaufdiagramm für die Client Side Path Planning Node.}\label{img:flow_movement_controller}
+\end{figure}
 
 \section{Computer Vision Node} % (fold)
 \label{sec:caltab_detector_node_impl}
-Diese Node wurde in der Programmiersprache C++ programmiert und liegt im Paket \texttt{caltab\_detector} mit dem Dateinamen \texttt{caltab\_detector\_node.cpp}. Sie dient dazu, die von der Kamera übermittelten Bilder auszuwerten und zur Kalibrierung vorzuhalten.
+Diese Node wurde in der Programmiersprache C++ programmiert und liegt im Paket \texttt{calibration\_perception} mit dem Dateinamen \texttt{caltab\_detector\_node.cpp}. Sie dient dazu, die von der Kamera übermittelten Bilder auszuwerten und zur Kalibrierung vorzuhalten.
 
 Vor dem Start muss der Benutzer über die Datei \texttt{caltab\_detector/config/parameters.yaml} einige Parameter konfigurieren. Diese sind in \autoref{tab:caltab_detector} aufgeführt.
 
@@ -73,7 +86,7 @@ Vor dem Start muss der Benutzer über die Datei \texttt{caltab\_detector/config/
 \label{tab:caltab_detector}
 \end{table}
 
-Über das angegebene Topic erhält das Programm die Bilder der Webcam. Zusätzlich stellt das Programm zwei Actionserver zur Verfügung. Der Actionserver mit dem Namen \texttt{find\_calibration\_object} hat die Aufgabe, in dem aktuellen Bild der Webcam nach dem Kalibrierungsmuster zu suchen. Der Actionclient kann für jeden Auftrag angeben, in wie vielen aufeinanderfolgenden Bildern der Server nach dem Muster suchen soll, da dieses nicht immer im ersten Versuch gefunden wird. Hat der Server das Muster innerhalb der erlaubten Anzahl von Bildern gefunden, erhält der Client eine positive Rückmeldung, ansonsten eine negative.
+Über das angegebene Topic erhält das Programm die Bilder der Webcam. Zusätzlich stellt das Programm zwei Actionserver zur Verfügung. Der Actionserver mit dem Namen \texttt{find\_calibration\_object} hat die Aufgabe, in dem aktuellen Bild der Webcam nach dem Kalibrierungsmuster zu suchen. Der Actionclient kann für jeden Auftrag angeben, in wie vielen aufeinanderfolgenden Bildern der Server nach dem Muster suchen soll, da dieses nicht immer im ersten Versuch gefunden wird. Außerdem wird ein Timeout mit angegeben. Hat der Server das Muster innerhalb der erlaubten Zeit und Anzahl von Bildern gefunden, erhält der Client eine positive Rückmeldung, ansonsten eine negative.
 
 Der zweite Actionserver \texttt{Calibrate} führt die Kalibrierung durch und errechnet aus allen Bildern, in denen das Muster zu sehen war, die intrinsischen Parameter, die Verzeichnungsparameter und den mittleren Fehler. Zusätzlich werden diese Bilder auf der Festplatte abgespeichert. Für jedes Bild wird außerdem eine Kopie angefertigt, in der eine Simulation des Musters über das im Bild zu sehende Muster gelegt wird. Dadurch kann zusätzlich visuell die Qualität der Kalibrierung überprüft werden.
 
@@ -85,20 +98,30 @@ Wenn jedoch ein Auftrag aktiv ist und das aktuelle Bild ausgewertet werden soll,
 
 Für jedes auszuwertende Bild wird ein fortlaufender Index erstellt, der im weiteren Verlauf benötigt wird. Es wird nun die HALCON-Methode \texttt{FindCalibObject} aufgerufen. Diese sucht in dem eben erstellten Bild nach dem Kalibrierungsmuster. Wird das Muster nicht erkannt, wirft diese Methode eine Exception. Diese wird im weiteren Verlauf der \texttt{subscriberCallback}-Methode gefangen und in der Konsole wird die Fehlermeldung von HALCON ausgegeben. Kann HALCON das Muster erkennen, wird es intern unter dem Index abgespeichert und zusätzlich in dem vom Benutzer angegeben Ordner gespeichert. In einer von diesem Programm verwalteten Liste wird zusätzlich der Index dieses Bildes abgespeichert. Der boolesche Wert caltabFound wird auf wahr gesetzt und die Anzahl der noch auszuwertenden Bilder für den aktuellen Auftrag auf null. 
 
-Erhält der find\_calibration\_object Actionserver einen neuen Auftrag, wird die Methode \texttt{find\_calibration\_objectAction} aufgerufen. Zunächst wird der boolesche Wert auf falsch und die Anzahl der auszuwertenden Bilder auf den Wert gesetzt, der im Auftrag vom Client angegeben wurde. Dann wartet die Methode so lange, bis entweder die angegebene Anzahl an Bildern ausgewertet wurde oder vorher ein Kalibrierungsmuster gefunden wurde. Ist der boolesche Wert caltabFound wahr, wird dem Client eine positive Rückmeldung gegeben, sonst eine negative.
+Erhält der find\_calibration\_object Actionserver einen neuen Auftrag, wird die Methode \texttt{find\_calibration\_objectAction} aufgerufen. Zunächst wird der boolesche Wert auf falsch und die Anzahl der auszuwertenden Bilder auf den Wert gesetzt, der im Auftrag vom Client angegeben wurde. Dann wartet die Methode so lange, bis entweder die angegebene Anzahl an Bildern ausgewertet wurde oder vorher ein Kalibrierungsmuster gefunden wurde. Ist der boolesche Wert caltabFound wahr, wird dem Client eine positive Rückmeldung gegeben, sonst eine negative. Siehe dazu \autoref{img:find_caltab}.
+\begin{figure}
+\centering
+\includegraphics[width=\textwidth]{images/find_caltab}
+\caption{Ablaufdiagramm für den find\_calibration\_object Actionserver}\label{img:find_caltab}
+\end{figure}
 
 Wenn der Calibrate Actionserver einen Auftrag erhält, wird die Kalibrierung durchgeführt. Dazu wird zunächst die HALCON-Methode \texttt{CalibrateCameras} aufgerufen. Diese berechnet intern die neuen intrinsischen Parameter und die Parameter für die Verzeichnung. Außerdem wird der mittlere Fehler zurückgegeben. Um nun die neuen Parameter zu erhalten, wird die HALCON-Methode \texttt{GetCalibData} aufgerufen. Die so erhaltenen Werte werden zunächst in Werte vom Typ \texttt{double} umgewandelt. Dann werden dem Client diese Werte, der Fehler und die Anzahl der zur Kalibrierung benutzten Bilder zurückgegeben.
 
-Anschließend wird nacheinander jedes abgespeicherte Bild mit Hilfe der Liste, die alle Indizes enthält, noch einmal mit HALCON eingelesen. Zunächst wird für das Bild die Position und Orientierung des Kalibrierungsmuster von HALCON ausgelesen, wie es von HALCON erkannt wurde. Dann werden diese Informationen mit den neuen Kameraparametern korrigiert. Schließlich wird das so korrigierte Kalibrierungsmuster über das eingelesene Bild gelegt und das Bild so auf dem Dateisystem abgespeichert. Siehe dazu \autoref{img:example_caltab} und \autoref{img:example_caltab_added}.
-\begin{figure}
+Anschließend wird nacheinander jedes abgespeicherte Bild mit Hilfe der Liste, die alle Indizes enthält, noch einmal mit HALCON eingelesen. Zunächst wird für das Bild die Position und Orientierung des Kalibrierungsmuster von HALCON ausgelesen, wie es von HALCON erkannt wurde. Dann werden diese Informationen mit den neuen Kameraparametern korrigiert. Schließlich wird das so korrigierte Kalibrierungsmuster über das eingelesene Bild gelegt und das Bild so auf dem Dateisystem abgespeichert. Siehe dazu \autoref{img:example_caltab} und \autoref{img:example_caltab_added} sowie für das Ablaufdiagramm \autoref{img:calibrate}.
+\begin{figure}[h]
 \centering
-\includegraphics[width=\textwidth]{images/example_caltab}
+\includegraphics[width=0.7\textwidth]{images/13}
 \caption{Das Originalbild.}\label{img:example_caltab}
 \end{figure}
-\begin{figure}
+\begin{figure}[h]
 \centering
-\includegraphics[width=\textwidth]{images/example_caltab_added}
-\caption{Das Bild mit dem eingezeichneten Kalibrierungsmuster. Man beachte die feinen Linien, die um das schwarze Rechteck und in die Kreise eingefügt wurden.}\label{img:example_caltab_added}
+\includegraphics[width=0.7\textwidth]{images/13_added}
+\caption{Ein Ausschnitt des Bildes mit dem eingezeichneten Kalibrierungsmuster. Man sieht die feinen Linien, die um das schwarze Rechteck und in die Kreise eingefügt wurden.}\label{img:example_caltab_added}
+\end{figure}
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{images/calibrate}
+\caption{Ablaufdiagramm für den calculate\_parameters Actionserver.}\label{img:calibrate}
 \end{figure}
 
 \section{MovementController} % (fold)
@@ -113,7 +136,12 @@ Die \texttt{take\_picture\_with\_orientation}-Methode schickt zunächst an den m
 
 Wenn der Aufruf der \texttt{take\_picture\_with\_orientation}-Methode ohne zusätzliche Neigung fehlschlägt, werden die unterschiedlichen Neigungen übersprungen. Dies passiert entweder, wenn die Position nicht vom Roboter erreicht werden kann, oder ein Fehler an einem anderen Teil der Software auftritt.
 
-Nachdem die \texttt{execute\_different\_orientations}-Methode alle unterschiedlichen Orientierungen durchgegangen oder bereits an der ersten Position gescheitert ist, gibt sie die Anzahl der Bilder zurück, in denen das Muster gefunden wurde.
+Nachdem die \texttt{execute\_different\_orientations}-Methode alle unterschiedlichen Orientierungen durchgegangen oder bereits an der ersten Position gescheitert ist, gibt sie die Anzahl der Bilder zurück, in denen das Muster gefunden wurde. Siehe dazu das Ablaufdiagramm in \autoref{img:flow_movement_controller}.
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{images/movement_controller}
+\caption{Ablaufdiagramm für den MovementController.}\label{img:movement_controller}
+\end{figure}
 
 \section{High Level Executive} % (fold)
 \label{sec:calibrationcontroller_impl}
@@ -125,6 +153,7 @@ Beim Aufruf dieser Klasse müssen ihr mehrere Parameter übergeben werden. Diese
 \begin{tabularx}{\textwidth}{|l|X|}
 	\hline
 	Parametername & Beschreibung \\\hline
+	latency & Verzögerung zwischen dem Erreichen einer Position und der Auswertung der Bilder \\\hline
 	close\_distance\_factor & Der Faktor, der die kurze Entfernung bestimmt \\\hline
 	medium\_distance\_factor & Der Faktor, der die mittlere Entfernung bestimmt \\\hline
 	far\_distance\_factor & Der Faktor, der die weite Entfernung bestimmt \\\hline
@@ -189,4 +218,28 @@ Da nun die Positionen im korrekten Koordinatensystem vorhanden sind, kann geprü
 
 Nachdem die Erreichbarkeit der Positionen überprüft wurde, wird jede Position mit der Methode \texttt{execute\_different\_orientations} vom \texttt{MoveMentcontroller} aufgerufen. Wie bereits erwähnt koordiniert diese Methode die Bewegung des Arms und die Aufnahme der Bilder.
 
-Wurden alle Positionen abgearbeitet, wird zum Schluss der Calibrate-Actionserver aufgerufen, um die Resultate der Kalibrierung zu erhalten. Danach wird das Programm beendet. \todo{Resultate nicht nur in der Konsole anzeigen sondern auch abspeichern}
+Wurden alle Positionen abgearbeitet, wird zum Schluss der Calibrate-Actionserver aufgerufen, um die Resultate der Kalibrierung zu erhalten. Diese Resultate werden wieder in einer yaml-Datei abgespeichert. Die Datei wird im Verzeichnis des calibration\_executive-Pakets abgelegt. Der Inhalt dieser Datei ist in \autoref{tab:results} aufgelistet.
+\begin{table}
+\begin{tabularx}{\textwidth}{|l|X|}
+	\hline
+	Parametername & Beschreibung \\\hline
+	amount\_of\_images & Anzahl der Bilder die zur Kalibrierung benutzt wurden\\\hline
+	distortion\_coefficients / k1, k2, k3 & Die Parameter, um die radialsymmetrische Verzeichnung zu berechnen \\\hline
+	distortion\_coefficients / p1, p2 & Die Parameter, um die tangentiale Verzeichnung zu berechnen \\\hline
+	error & Der mittlere Fehler in Pixeln \\\hline
+	intrinsics / cell\_height & Die Höhe eines Pixel auf dem Kamerasensor in Metern \\\hline
+	intrinsics / cell\_width & Die Breite eines Pixel auf dem Kamerasensor in Metern \\\hline
+	intrinsics / focal\_length & Die Brennweite in Metern \\\hline
+	image\_center\_x & Der optische Mittelpunkt des Bildes entlang der x-Achse \\\hline
+	image\_center\_y & Der optische Mittelpunkt des Bildes entlang der y-Achse \\\hline
+\end{tabularx}
+\caption{Beschreibung der Parameter für den High Level Executive}
+\label{tab:results}
+\end{table}
+
+Danach wird das Programm beendet. Siehe auch hier das Ablaufdiagramm in \autoref{img:high_leve}.
+\begin{figure}
+\centering
+\includegraphics[width=\textwidth]{images/high_level}
+\caption{Ablaufdiagramm für den High Level Executive.}\label{img:high_leve}
+\end{figure}
